@@ -9,10 +9,15 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(CUDA REQUIRED)
+find_package(realsense2 REQUIRED)
 
 set(CUDA_NVCC_PLAGS ${CUDA_NVCC_PLAGS};-std=c++11;-g;-G;-gencode;arch=compute_30;code=sm_30)
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    ${realsense2_INCLUDE_DIRS}
+    )
+
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
     message("embed_platform on")
     include_directories(/usr/local/cuda/targets/aarch64-linux/include)
@@ -37,6 +42,12 @@ target_link_libraries(yolov5 nvinfer)
 target_link_libraries(yolov5 cudart)
 target_link_libraries(yolov5 myplugins)
 target_link_libraries(yolov5 ${OpenCV_LIBS})
+
+add_executable(yolov5-realsense ${PROJECT_SOURCE_DIR}/yolov5-realsense.cpp)
+target_link_libraries(yolov5-realsense nvinfer)
+target_link_libraries(yolov5-realsense cudart)
+target_link_libraries(yolov5-realsense myplugins)
+target_link_libraries(yolov5-realsense ${OpenCV_LIBS} ${realsense2_LIBRARY})
 
 add_definitions(-O2 -pthread)
 
