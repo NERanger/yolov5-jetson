@@ -533,16 +533,16 @@ int main(int argc, char **argv) try {
     // Align depth stream to color stream
     rs2::align align_to_color(RS2_STREAM_COLOR);
 
-    rs2::frameset data;
+    rs2::frameset frameset;
 
     std::cout << "waiting for camera auto exposure steady..." << std::endl;
     for(int i = 0; i < 20; i++){
-        data = pipe.wait_for_frames();
+        frameset = pipe.wait_for_frames();
     }
     std::cout << "waiting for camera auto exposure steady... Done" << std::endl;
     
-    rs2::depth_frame depth = data.get_depth_frame();
-    rs2::video_frame color = data.get_color_frame();
+    rs2::depth_frame depth = frameset.get_depth_frame();
+    rs2::video_frame color = frameset.get_color_frame();
 
     rs2::stream_profile depth_profile = depth.get_profile();
     rs2::stream_profile color_profile = color.get_profile();
@@ -614,12 +614,12 @@ int main(int argc, char **argv) try {
     std::thread stop_detect_thread = std::thread(stop_falg_detection);
 
     while (!stop_flag){
-        data = pipe.wait_for_frames();
-        data = align_to_color.process(data);
+        frameset = pipe.wait_for_frames();
+        frameset = align_to_color.process(frameset);
 
-        // depth = data.get_depth_frame();
-        color = data.get_color_frame();
-        // double time_stamp = data.get_timestamp();
+        // depth = frameset.get_depth_frame();
+        color = frameset.get_color_frame();
+        // double time_stamp = frameset.get_timestamp();
 
         // cv::Mat im_D(cv::Size(depth_width, depth_height), CV_16U, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
         cv::Mat im_RGB(cv::Size(color_width, color_height), CV_8UC3, (void*)color.get_data(), cv::Mat::AUTO_STEP);
@@ -632,13 +632,17 @@ int main(int argc, char **argv) try {
         for (int row = 0; row < INPUT_H; ++row) {
             uchar* uc_pixel = pr_img.data + row * pr_img.step;
             for (int col = 0; col < INPUT_W; ++col) {
-                data[b * 3 * INPUT_H * INPUT_W + i] = (float)uc_pixel[2] / 255.0;
-                data[b * 3 * INPUT_H * INPUT_W + i + INPUT_H * INPUT_W] = (float)uc_pixel[1] / 255.0;
-                data[b * 3 * INPUT_H * INPUT_W + i + 2 * INPUT_H * INPUT_W] = (float)uc_pixel[0] / 255.0;
+                data[i] = (float)uc_pixel[2] / 255.0;
+                data[i + INPUT_H * INPUT_W] = (float)uc_pixel[1] / 255.0;
+                data[i + 2 * INPUT_H * INPUT_W] = (float)uc_pixel[0] / 255.0;
                 uc_pixel += 3;
                 ++i;
             }
         }
+
+        // For debugging
+        // cv::Mat net_input(INPUT_H, INPUT_W, CV_MAKETYPE(cv::DataType<float>::type, 3));
+        // memcpy(net_input.data, data, INPUT_H * INPUT_W * 3 * sizeof(float));
 
         // Run inference
         auto start = std::chrono::system_clock::now();
@@ -649,15 +653,23 @@ int main(int argc, char **argv) try {
         << "ms" << std::endl;
 
         std::vector<Yolo::Detection> res;
-        nms(res, &prob[b * OUTPUT_SIZE], CONF_THRESH, NMS_THRESH);
-        for (size_t j = 0; j < res.size(); j++) {
+
+        nms(res, &prob[0], CONF_THRESH, NMS_THRESH);
+        size_t r_size = res.size();
+        std::cout << "Detection num: " << r_size << std::endl;
+
+        for (size_t j = 0; j < r_size; j++) {
             cv::Rect r = get_rect(im_RGB, res[j].bbox);
             cv::rectangle(im_RGB, r, cv::Scalar(0x27, 0xC1, 0x36), 2);
             cv::putText(im_RGB, std::to_string((int)res[j].class_id), cv::Point(r.x, r.y - 1), cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0xFF, 0xFF, 0xFF), 2);
         }
 
+        // std::cout << "img size: " << im_RGB.cols << "*" << im_RGB.rows << std::endl;
+
+        cv::imshow("preprocessed img", pr_img);
+        // cv::imshow("network input", net_input);
         cv::imshow("result", im_RGB);
-        cv::waitKey(10);
+        cv::waitKey(5);
 
     }
 

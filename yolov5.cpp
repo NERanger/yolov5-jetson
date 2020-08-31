@@ -557,6 +557,10 @@ int main(int argc, char** argv) {
             }
         }
 
+        // For debugging
+        // cv::Mat net_input(INPUT_H, INPUT_W, CV_MAKETYPE(cv::DataType<float>::type, 3));
+        // memcpy(net_input.data, data, INPUT_H * INPUT_W * 3 * sizeof(float));
+
         // Run inference
         auto start = std::chrono::system_clock::now();
         doInference(*context, data, prob, BATCH_SIZE);
@@ -577,6 +581,8 @@ int main(int argc, char** argv) {
                 cv::putText(img, std::to_string((int)res[j].class_id), cv::Point(r.x, r.y - 1), cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0xFF, 0xFF, 0xFF), 2);
             }
             cv::imwrite("_" + file_names[f - fcount + 1 + b], img);
+            // cv::imshow("net_input_" + file_names[f - fcount + 1 + b], net_input);
+            // cv::waitKey(0);
         }
         fcount = 0;
     }
