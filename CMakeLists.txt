@@ -45,6 +45,12 @@ target_link_libraries(yolov5 cudart)
 target_link_libraries(yolov5 myplugins)
 target_link_libraries(yolov5 ${OpenCV_LIBS})
 
+add_executable(yolov5-module ${PROJECT_SOURCE_DIR}/yolov5-module.cpp)
+target_link_libraries(yolov5-module nvinfer)
+target_link_libraries(yolov5-module cudart)
+target_link_libraries(yolov5-module myplugins)
+target_link_libraries(yolov5-module ${OpenCV_LIBS})
+
 add_executable(yolov5-realsense ${PROJECT_SOURCE_DIR}/yolov5-realsense.cpp)
 target_link_libraries(yolov5-realsense nvinfer)
 target_link_libraries(yolov5-realsense cudart)
