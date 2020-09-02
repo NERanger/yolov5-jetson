@@ -555,14 +555,14 @@ void imgInference(cv::Mat& img) {
         cv::putText(img, std::to_string((int)res[j].class_id), cv::Point(r.x, r.y - 1), cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0xFF, 0xFF, 0xFF), 2);
     }
 
-    cv::imshow("result", img);
-    cv::waitKey(0);
+    cv::imwrite("result.jpg", img);
+    //cv::waitKey(0);
 
 }
 
 void destoryInference(){
 
-    cv::destroyAllWindows();
+    //cv::destroyAllWindows();
 
     // Destroy the engine
     context->destroy();
@@ -574,7 +574,7 @@ int main(int argc, char **argv) {
 
     initInference();
 
-    cv::Mat img = cv::imread("../sample/1.jpg")
+    cv::Mat img = cv::imread("../sample/3.png");
 
     imgInference(img);
 
