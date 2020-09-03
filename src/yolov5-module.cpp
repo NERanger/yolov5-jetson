@@ -570,13 +570,13 @@ void destoryInference(){
     runtime->destroy();
 }
 
-int main(int argc, char **argv) {
+// int main(int argc, char **argv) {
 
-    initInference();
+//     initInference();
 
-    cv::Mat img = cv::imread("../sample/3.png");
+//     cv::Mat img = cv::imread("../sample/3.png");
 
-    imgInference(img);
+//     imgInference(img);
 
-    destoryInference();
-}
+//     destoryInference();
+// }
