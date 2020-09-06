@@ -2,3 +2,5 @@ build/
 .vscode/
 
 *.wts
+
+scripts/yolov5_module.cpython-36m-aarch64-linux-gnu.so

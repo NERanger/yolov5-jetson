@@ -1,23 +1,7 @@
 #include <iostream>
 #include <chrono>
 
-#include <opencv2/core/core.hpp>
-
-#include "cuda_runtime_api.h"
-#include "logging.h"
-#include "common.hpp"
-
-#define USE_FP16  // comment out this if want to use FP32
-#define DEVICE 0  // GPU id
-#define NMS_THRESH 0.4
-#define CONF_THRESH 0.5
-#define BATCH_SIZE 1
-
-#define NET s  // s m l x
-#define NETSTRUCT(str) createEngine_##str
-#define CREATENET(net) NETSTRUCT(net)
-#define STR1(x) #x
-#define STR2(x) STR1(x)
+#include "yolov5-module.hpp"
 
 // stuff we know about the network and the input/output blobs
 static const int INPUT_H = Yolo::INPUT_H;
@@ -490,15 +474,15 @@ static IRuntime* runtime;
 static ICudaEngine* engine;
 static IExecutionContext* context;
 
-void initInference() {
+void initInference(const std::string& engine_path) {
 
     cudaSetDevice(DEVICE);
     // create a model using the API directly and serialize it to a stream
     char *trtModelStream{nullptr};
     size_t size{0};
-    std::string engine_name = STR2(NET);
-    engine_name = "yolov5" + engine_name + ".engine";
-    std::ifstream file(engine_name, std::ios::binary);
+    // std::string engine_name = STR2(NET);
+    // engine_name = "yolov5" + engine_name + ".engine";
+    std::ifstream file(engine_path, std::ios::binary);
     if (file.good()) {
         file.seekg(0, file.end);
         size = file.tellg();
@@ -518,7 +502,7 @@ void initInference() {
     delete[] trtModelStream;
 }
 
-void imgInference(cv::Mat& img) {
+std::vector<Yolo::Detection> imgInference(cv::Mat& img) {
 
     cv::Mat img_inf = img.clone();
     cv::Mat pr_img = preprocess_img(img_inf);
@@ -549,14 +533,16 @@ void imgInference(cv::Mat& img) {
     size_t r_size = res.size();
     std::cout << "Detection num: " << r_size << std::endl;
 
-    for (size_t j = 0; j < r_size; j++) {
-        cv::Rect r = get_rect(img, res[j].bbox);
-        cv::rectangle(img, r, cv::Scalar(0x27, 0xC1, 0x36), 2);
-        cv::putText(img, std::to_string((int)res[j].class_id), cv::Point(r.x, r.y - 1), cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0xFF, 0xFF, 0xFF), 2);
-    }
+    // for (size_t j = 0; j < r_size; j++) {
+    //     cv::Rect r = get_rect(img, res[j].bbox);
+    //     cv::rectangle(img, r, cv::Scalar(0x27, 0xC1, 0x36), 2);
+    //     cv::putText(img, std::to_string((int)res[j].class_id), cv::Point(r.x, r.y - 1), cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0xFF, 0xFF, 0xFF), 2);
+    // }
 
-    cv::imwrite("result.jpg", img);
-    //cv::waitKey(0);
+    // cv::imwrite("result.jpg", img);
+    // cv::waitKey(0);
+
+    return res;
 
 }
 
