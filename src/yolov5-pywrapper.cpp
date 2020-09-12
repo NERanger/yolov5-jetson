@@ -2,13 +2,10 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/numpy.h"
-#include "pybind11/stl_bind.h"
 #include "pybind11/stl.h"
 
 #include "yolov5-module.hpp"
 #include "yolov5-pywrapper.hpp"
-
-PYBIND11_MAKE_OPAQUE(std::vector<infer_result_t>)
 
 namespace py = pybind11;
 
@@ -38,7 +35,12 @@ std::vector<infer_result_t> py_image_inference(py::array_t<uint8_t>& input){
     size_t res_size = res.size();
     for(size_t i = 0; i < res_size; i++){
         infer_result_t r;
-        std::copy(std::begin(res[i].bbox), std::end(res[i].bbox), std::begin(r.bbox));
+
+        r.bbox[0] = res[i].bbox[0];
+        r.bbox[1] = res[i].bbox[1];
+        r.bbox[2] = res[i].bbox[2];
+        r.bbox[3] = res[i].bbox[3];
+
         r.class_id = res[i].class_id;
         r.conf = res[i].conf;
     }
@@ -52,12 +54,9 @@ void py_destory_inference(){
 
 PYBIND11_MODULE(yolov5_module, m){
     py::class_<infer_result_t>(m, "infer_result")
-        .def(py::init<>())
         .def_readonly("bbox", &infer_result_t::bbox)
         .def_readonly("conf", &infer_result_t::conf)
         .def_readonly("classid", &infer_result_t::class_id);
-
-    py::bind_vector<std::vector<infer_result_t>>(m, "vec_infer_result");
 
     m.def("init_inference", &py_init_inference);
     m.def("image_inference", &py_image_inference);
