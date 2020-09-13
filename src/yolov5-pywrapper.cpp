@@ -43,6 +43,8 @@ std::vector<infer_result_t> py_image_inference(py::array_t<uint8_t>& input){
 
         r.class_id = res[i].class_id;
         r.conf = res[i].conf;
+
+        py_res.push_back(r);
     }
 
     return py_res;
