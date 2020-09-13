@@ -504,8 +504,8 @@ void initInference(const std::string& engine_path) {
 
 std::vector<Yolo::Detection> imgInference(cv::Mat& img) {
 
-    cv::Mat img_inf = img.clone();
-    cv::Mat pr_img = preprocess_img(img_inf);
+    // cv::Mat img_inf = img.clone();
+    cv::Mat pr_img = preprocess_img(img);
 
     int i = 0;
     for (int row = 0; row < INPUT_H; ++row) {
