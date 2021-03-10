@@ -1,68 +1,64 @@
-# yolov5
+# Yolov5-jetson
 
-The Pytorch implementation is [ultralytics/yolov5](https://github.com/ultralytics/yolov5).
+yolov5 TensorRT implementation for running on Nvidia Jetson AGX Xavier with RealSense D435.
 
-Currently, we support yolov5 v1.0(yolov5s only), v2.0 and v3.0.
+This repo uses [yolov5 release v3.0](https://github.com/ultralytics/yolov5/releases/tag/v3.0).
 
-- For yolov5 v3.0, please visit [yolov5 release v3.0](https://github.com/ultralytics/yolov5/releases/tag/v3.0), and use the latest commit of this repo.
-- For yolov5 v2.0, please visit [yolov5 release v2.0](https://github.com/ultralytics/yolov5/releases/tag/v2.0), and checkout commit ['7cd092d'](https://github.com/wang-xinyu/tensorrtx/commit/7cd092d38289123442157cf7defab78e816f4440) of this repo.
-- For yolov5 v1.0, please visit [yolov5 release v1.0](https://github.com/ultralytics/yolov5/releases/tag/v1.0), and checkout commit ['0504551'](https://github.com/wang-xinyu/tensorrtx/commit/0504551c0b7d0bac5f998eda349810ba410715de) of this repo.
+## Acknowledgement
+
+This repo is a modified version of https://github.com/wang-xinyu/tensorrtx/tree/master/yolov5.
+
+The motivation is that the origin python implementation for yolov5 inference with TensorRT acceleration does not work on my Nvidia Jetson Xavier. Therefore, I use Pybind11 to add a Python interface for the C++ implementation.
 
 ## Config
 
-- Choose the model s/m/l/x by `NET` macro in yolov5.cpp
-- Input shape defined in yololayer.h
-- Number of classes defined in yololayer.h
-- FP16/FP32 can be selected by the macro in yolov5.cpp
-- GPU id can be selected by the macro in yolov5.cpp
-- NMS thresh in yolov5.cpp
-- BBox confidence thresh in yolov5.cpp
-- Batch size in yolov5.cpp
+The configuration approach is not well-designed, I will consider refactoring when I have time. Currently I just bare with the version from the original repo.
 
-## How to Run, yolov5s as example
+- Choose the model s/m/l/x by `NET` macro in [yolov5.cpp](src/yolov5.cpp)
+- Input shape defined in [yololayer.h](plugin/yololayer.h)
+- Number of classes defined in [yololayer.h](plugin/yololayer.h)
+- FP16/FP32 can be selected by the macro in [yolov5.cpp](src/yolov5.cpp)
+- GPU id can be selected by the macro in [yolov5.cpp](src/yolov5.cpp)
+- NMS thresh in [yolov5.cpp](src/yolov5.cpp)
+- BBox confidence thresh in [yolov5.cpp](src/yolov5.cpp)
+- Batch size in [yolov5.cpp](src/yolov5.cpp)
 
-```
-1. generate yolov5s.wts from pytorch with yolov5s.pt
+## Usage (Yolov5s as an example)
 
-git clone https://github.com/wang-xinyu/tensorrtx.git
-git clone https://github.com/ultralytics/yolov5.git
-// download its weights 'yolov5s.pt'
-// copy tensorrtx/yolov5/gen_wts.py into ultralytics/yolov5
-// ensure the file name is yolov5s.pt and yolov5s.wts in gen_wts.py
-// go to ultralytics/yolov5
-python gen_wts.py
-// a file 'yolov5s.wts' will be generated.
+1. Generate .wts from pytorch with .pt, or download .wts from model zoo
+   * git clone source code of yolov5 v3.0
+   * download https://github.com/ultralytics/yolov5/releases/download/v3.0/yolov5s.pt
+   * copy scripts/gen_wts.py into ultralytics/yolov5
+   * ensure the file name is yolov5s.pt and yolov5s.wts in gen_wts.py
+   * go to this repo folder
+   * Execute `python3 gen_wts.py`
+   * a file 'yolov5s.wts' will be generated
 
-2. build tensorrtx/yolov5 and run
+2. Build this repo and run
 
-// put yolov5s.wts into tensorrtx/yolov5
-// go to tensorrtx/yolov5
-// ensure the macro NET in yolov5.cpp is s
-mkdir build
-cd build
-cmake ..
-make
-sudo ./yolov5 -s             // serialize model to plan file i.e. 'yolov5s.engine'
-sudo ./yolov5 -d  ../samples // deserialize plan file and run inference, the images in samples will be processed.
+   * Put yolov5s.wts into this repo folder
 
-3. check the images generated, as follows. _zidane.jpg and _bus.jpg
+   * Update CLASS_NUM in yololayer.h if your model is trained on custom dataset
 
-4. optional, load and run the tensorrt model in python
+   * Execute the following bash commands
 
-// install python-tensorrt, pycuda, etc.
-// ensure the yolov5s.engine and libmyplugins.so have been built
-python yolov5_trt.py
-```
+     ```bash
+     mkdir build
+     cd build
+     cmake ..
+     make
+     // serialize model to plan file
+     sudo ./yolov5 -s [.wts] [.engine] [s/m/l/x or c gd gw]
+     // deserialize and run inference, the images in [image folder] will be processed.
+     sudo ./yolov5 -d [.engine] [image folder]
+     // For example yolov5s
+     sudo ./yolov5 -s yolov5s.wts yolov5s.engine s
+     sudo ./yolov5 -d yolov5s.engine ../samples
+     // For example Custom model with depth_multiple=0.17, width_multiple=0.25 in yolov5.yaml
+     sudo ./yolov5 -s yolov5_custom.wts yolov5.engine c 0.17 0.25
+     sudo ./yolov5 -d yolov5.engine ../samples
+     ```
 
-<p align="center">
-<img src="https://user-images.githubusercontent.com/15235574/78247927-4d9fac00-751e-11ea-8b1b-704a0aeb3fcf.jpg">
-</p>
+3. check the images generated.
 
-<p align="center">
-<img src="https://user-images.githubusercontent.com/15235574/78247970-60b27c00-751e-11ea-88df-41473fed4823.jpg">
-</p>
-
-## More Information
-
-See the readme in [home page.](https://github.com/wang-xinyu/tensorrtx)
-
+4. For inference with python, an example is given in [scripts/yolov5_infer.py](scripts/yolov5_infer.py)
